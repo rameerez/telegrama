@@ -1,4 +1,4 @@
-# 💬 telegrams – a tiny wrapper to send admin Telegram messages
+# 💬 `telegrams` – a tiny wrapper to send admin Telegram messages
 
 [![Gem Version](https://badge.fury.io/rb/telegrams.svg)](https://badge.fury.io/rb/telegrams)
 
@@ -10,7 +10,7 @@ I'm making this gem because I'm tired of copy-pasting the same Telegram wrapper 
 Telegrams.send_message("Important admin notification!")
 ```
 
-This is useful for Rails developers using Telegram messages for notifications, admin alerts, daily summaries, and status updates.
+This is useful for Rails developers using Telegram messages for notifications, admin alerts, errors, logs, daily summaries, and status updates.
 
 ## Quick start
 
