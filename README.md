@@ -12,6 +12,20 @@ Telegrama.send_message("Important admin notification!")
 
 I use it all the time to alert me of new sales, important notifications, and daily summaries, like this:
 
+> 💸 **New sale!**
+> 
+> joh...e@gmail.com paid **$49.99** for Business Plan.
+> 
+> 📊 **Quick Stats:**
+> 
+> • MRR: $12,345
+> 
+> • Revenue this month: $3,456
+> 
+> [🔗 View details](https://example.com/admin/subscriptions/123)
+
+Which is a beautifully formatted message you'll in Telegram just with something like:
+
 ```ruby
 message = <<~MSG
   💸 *New sale\!*
@@ -28,21 +42,7 @@ MSG
 Telegrama.send_message(message, formatting: { obfuscate_emails: true })
 ```
 
-And you'll get a beautifully formatted message in Telegram that looks like this:
-
-> 💸 **New sale!**
-> 
-> joh...e@gmail.com paid **$49.99** for Business Plan.
-> 
-> 📊 **Quick Stats:**
-> 
-> • MRR: $12,345
-> 
-> • Revenue this month: $3,456
-> 
-> [🔗 View details](https://example.com/admin/subscriptions/123)
-
-The email gets redacted automatically to avoid leaking personal information; and if you have different group chats for marketing, management, etc. you can send different messages to them:
+Note how the email gets redacted automatically to avoid leaking personal information (john.doe@gmail.com -> joh...e@gmail.com); and if you have different group chats for marketing, management, etc. you can send different messages to them:
 
 ```ruby
 Telegrama.send_message(a_general_message, chat_id: general_chat_id)
