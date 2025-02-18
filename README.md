@@ -4,13 +4,52 @@
 
 Send quick, simple admin / logging Telegram messages via a Telegram bot.
 
-I'm making this gem because I'm tired of copy-pasting the same Telegram wrapper from Rails project to Rails project just to send myself admin messages and notifications. The goal with this gem is to provide a straightforward, minimal API to send Telegram messages reliably. All I want to do is this:
+Useful for Rails developers using Telegram messages for notifications, admin alerts, errors, logs, daily summaries, and status updates, like:
 
 ```ruby
 Telegrama.send_message("Important admin notification!")
 ```
 
-This is useful for Rails developers using Telegram messages for notifications, admin alerts, errors, logs, daily summaries, and status updates.
+I use it all the time to alert me of new sales, important notifications, and daily summaries, like this:
+
+```ruby
+message = <<~MSG
+  💸 *New sale\!*
+  
+  #{customer.email} paid *$#{amount}* for #{product.name}\.
+  
+  📊 *Quick Stats:*
+  • MRR: $#{current_mrr}
+  • Revenue this month: $#{revenue_this_month}
+  
+  [🔗 Details](#{admin_subscription_url(subscription)})
+MSG
+
+Telegrama.send_message(message, formatting: { obfuscate_emails: true })
+```
+
+And you'll get a beautifully formatted message in Telegram that looks like this:
+
+> 💸 **New sale!**
+> 
+> joh...e@gmail.com paid **$49.99** for Business Plan.
+> 
+> 📊 **Quick Stats:**
+> 
+> • MRR: $12,345
+> 
+> • Revenue this month: $3,456
+> 
+> [🔗 View details](https://example.com/admin/subscriptions/123)
+
+The email gets redacted automatically to avoid leaking personal information; and if you have different group chats for marketing, management, etc. you can send different messages to them:
+
+```ruby
+Telegrama.send_message(a_general_message, chat_id: general_chat_id)
+Telegrama.send_message(marketing_message, chat_id: marketing_chat_id)
+```
+
+The goal with this gem is to provide a straightforward, no-frills, minimal API to send Telegram messages reliably for admin purposes.
 
 ## Quick start
 
