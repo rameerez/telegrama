@@ -1,6 +1,6 @@
 # 💬 `telegrama` – a tiny wrapper to send admin Telegram messages
 
-[![Gem Version](https://badge.fury.io/rb/telegrama.svg?v=0.1.0)](https://badge.fury.io/rb/telegrama?v=0.1.0)
+[![Gem Version](https://badge.fury.io/rb/telegrama.svg?v=0.1.1)](https://badge.fury.io/rb/telegrama?v=0.1.1)
 
 Send quick, simple admin / logging Telegram messages via a Telegram bot.
 
