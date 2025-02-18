@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Telegrams
+module Telegrama
   class Configuration
 
     # Your Telegram Bot API token
@@ -70,32 +70,32 @@ module Telegrams
 
     def validate_bot_token!
       if bot_token.nil? || bot_token.strip.empty?
-        raise ArgumentError, "Telegrams configuration error: bot_token cannot be blank."
+        raise ArgumentError, "Telegrama configuration error: bot_token cannot be blank."
       end
     end
 
     def validate_default_parse_mode!
       allowed_modes = ['MarkdownV2', 'HTML', nil]
       unless allowed_modes.include?(default_parse_mode)
-        raise ArgumentError, "Telegrams configuration error: default_parse_mode must be one of #{allowed_modes.inspect}."
+        raise ArgumentError, "Telegrama configuration error: default_parse_mode must be one of #{allowed_modes.inspect}."
       end
     end
 
     def validate_formatting_options!
       unless formatting_options.is_a?(Hash)
-        raise ArgumentError, "Telegrams configuration error: formatting_options must be a hash."
+        raise ArgumentError, "Telegrama configuration error: formatting_options must be a hash."
       end
 
       %i[escape_markdown obfuscate_emails escape_html].each do |key|
         if formatting_options.key?(key) && ![true, false].include?(formatting_options[key])
-          raise ArgumentError, "Telegrams configuration error: formatting_options[:#{key}] must be true or false."
+          raise ArgumentError, "Telegrama configuration error: formatting_options[:#{key}] must be true or false."
         end
       end
 
       if formatting_options.key?(:truncate)
         truncate_val = formatting_options[:truncate]
         unless truncate_val.is_a?(Integer) && truncate_val.positive?
-          raise ArgumentError, "Telegrams configuration error: formatting_options[:truncate] must be a positive integer."
+          raise ArgumentError, "Telegrama configuration error: formatting_options[:truncate] must be a positive integer."
         end
       end
     end

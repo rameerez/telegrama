@@ -1,4 +1,4 @@
-module Telegrams
+module Telegrama
   module Formatter
     MARKDOWN_SPECIAL_CHARS = %w[_ * [ ] ( ) ~ ` > # + - = | { } . !].freeze
     # Characters that should always be escaped in Telegram messages, even when Markdown is enabled
@@ -8,7 +8,7 @@ module Telegrams
 
     def self.format(text, options = {})
       # Merge defaults with any runtime overrides
-      defaults = Telegrams.configuration.formatting_options || {}
+      defaults = Telegrama.configuration.formatting_options || {}
       opts = defaults.merge(options)
 
       text = text.to_s

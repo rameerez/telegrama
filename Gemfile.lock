@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    telegrams (0.1.0)
+    telegrama (0.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -32,7 +32,7 @@ PLATFORMS
 DEPENDENCIES
   irb
   rake (~> 13.0)
-  telegrams!
+  telegrama!
 
 BUNDLED WITH
    2.6.4

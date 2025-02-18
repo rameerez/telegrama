@@ -1,4 +1,4 @@
-module Telegrams
+module Telegrama
   class SendMessageJob < ActiveJob::Base
     # No default queue provided here -- it's passed from the job call instead
 

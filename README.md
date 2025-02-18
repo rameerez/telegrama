@@ -1,23 +1,23 @@
-# 💬 `telegrams` – a tiny wrapper to send admin Telegram messages
+# 💬 `telegrama` – a tiny wrapper to send admin Telegram messages
 
-[![Gem Version](https://badge.fury.io/rb/telegrams.svg?v=0.1.0)](https://badge.fury.io/rb/telegrams?v=0.1.0)
+[![Gem Version](https://badge.fury.io/rb/telegrama.svg?v=0.1.0)](https://badge.fury.io/rb/telegrama?v=0.1.0)
 
 Send quick, simple admin / logging Telegram messages via a Telegram bot.
 
 I'm making this gem because I'm tired of copy-pasting the same Telegram wrapper from Rails project to Rails project just to send myself admin messages and notifications. The goal with this gem is to provide a straightforward, minimal API to send Telegram messages reliably. All I want to do is this:
 
 ```ruby
-Telegrams.send_message("Important admin notification!")
+Telegrama.send_message("Important admin notification!")
 ```
 
 This is useful for Rails developers using Telegram messages for notifications, admin alerts, errors, logs, daily summaries, and status updates.
 
 ## Quick start
 
-Add telegrams to your Gemfile:
+Add telegrama to your Gemfile:
 
 ```ruby
-gem 'telegrams'
+gem 'telegrama'
 ```
 
 Then run:
@@ -26,10 +26,10 @@ Then run:
 bundle install
 ```
 
-Then, create an initializer file under `config/initializers/telegrams.rb` and set your credentials:
+Then, create an initializer file under `config/initializers/telegrama.rb` and set your credentials:
 
 ```ruby
-Telegrams.configure do |config|
+Telegrama.configure do |config|
   config.bot_token = Rails.application.credentials.dig(Rails.env.to_sym, :telegram, :bot_token)
   config.chat_id   = Rails.application.credentials.dig(Rails.env.to_sym, :telegram, :chat_id)
   config.default_parse_mode = 'MarkdownV2'
@@ -52,7 +52,7 @@ Done!
 You can now send Telegram messages using your bot:
 
 ```ruby
-Telegrams.send_message("Hey, this is your Rails app speaking via Telegram!")
+Telegrama.send_message("Hey, this is your Rails app speaking via Telegram!")
 ```
 
 ## Advanced options
@@ -63,27 +63,27 @@ Sometimes you want to report user actions including a sufficiently identifiable 
 
 ### Overriding defaults with options
 
-You can pass an options hash to `Telegrams.send_message` to override default behavior on a per‑message basis:
+You can pass an options hash to `Telegrama.send_message` to override default behavior on a per‑message basis:
 
 - **`chat_id`**
   *Override the default chat ID set in your configuration.*
   **Usage Example:**
   ```ruby
-  Telegrams.send_message("Hello, alternate group!", chat_id: alternate_chat_id)
+  Telegrama.send_message("Hello, alternate group!", chat_id: alternate_chat_id)
   ```
 
 - **`parse_mode`**
   *Override the default parse mode (default is `"MarkdownV2"`).*
   **Usage Example:**
   ```ruby
-  Telegrams.send_message("Hello, world!", parse_mode: "HTML")
+  Telegrama.send_message("Hello, world!", parse_mode: "HTML")
   ```
 
 - **`disable_web_page_preview`**
   *Enable or disable web page previews (default is `true`).*
   **Usage Example:**
   ```ruby
-  Telegrams.send_message("Check out this link: https://example.com", disable_web_page_preview: false)
+  Telegrama.send_message("Check out this link: https://example.com", disable_web_page_preview: false)
   ```
 
 - **`formatting`**
@@ -95,7 +95,7 @@ You can pass an options hash to `Telegrams.send_message` to override default beh
   
   **Usage Example:**
   ```ruby
-  Telegrams.send_message("Contact: john.doe@example.com", formatting: { obfuscate_emails: true })
+  Telegrama.send_message("Contact: john.doe@example.com", formatting: { obfuscate_emails: true })
   ```
 
 ### Asynchronous message delivery
@@ -104,7 +104,7 @@ For production environments or high-traffic applications, you might want to offl
 
 With `deliver_message_async` setting enabled, calling:
 ```ruby
-Telegrams.send_message("Hello asynchronously!")
+Telegrama.send_message("Hello asynchronously!")
 ```
 
 will enqueue a job on the specified queue (`deliver_message_queue`) rather than sending the message immediately.
@@ -117,7 +117,7 @@ To install this gem onto your local machine, run `bundle exec rake install`.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/rameerez/telegrams. Our code of conduct is: just be nice and make your mom proud of what you do and post online.
+Bug reports and pull requests are welcome on GitHub at https://github.com/rameerez/telegrama. Our code of conduct is: just be nice and make your mom proud of what you do and post online.
 
 ## License
 

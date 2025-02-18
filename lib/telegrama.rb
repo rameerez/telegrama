@@ -7,14 +7,14 @@ require "json"
 require "cgi"
 
 # Require our gem files
-require_relative "telegrams/error"
-require_relative "telegrams/version"
-require_relative "telegrams/configuration"
-require_relative "telegrams/formatter"
-require_relative "telegrams/client"
-require_relative "telegrams/send_message_job"
+require_relative "telegrama/error"
+require_relative "telegrama/version"
+require_relative "telegrama/configuration"
+require_relative "telegrama/formatter"
+require_relative "telegrama/client"
+require_relative "telegrama/send_message_job"
 
-module Telegrams
+module Telegrama
   class << self
     # Returns the configuration object.
     def configuration
