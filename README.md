@@ -1,6 +1,6 @@
 # 💬 `telegrams` – a tiny wrapper to send admin Telegram messages
 
-[![Gem Version](https://badge.fury.io/rb/telegrams.svg)](https://badge.fury.io/rb/telegrams)
+[![Gem Version](https://badge.fury.io/rb/telegrams.svg?v=0.1.0)](https://badge.fury.io/rb/telegrams?v=0.1.0)
 
 Send quick, simple admin / logging Telegram messages via a Telegram bot.
 
