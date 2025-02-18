@@ -16,27 +16,24 @@ I use it all the time to alert me of new sales, important notifications, and dai
 > 
 > joh...e@gmail.com paid **$49.99** for Business Plan.
 > 
-> 📊 **Quick Stats:**
+> 📈 MRR: $12,345
 > 
-> • MRR: $12,345
+> 📈 Total customers: 1,234
 > 
-> • Total customers: 1,234
-> 
-> [🔗 View details](https://example.com/admin/subscriptions/123)
+> [🔗 View purchase details](https://example.com/admin/subscriptions/123)
 
 Which is a beautifully formatted message you'll in Telegram just with just this:
 
 ```ruby
 message = <<~MSG
-  💸 *New sale\!*
+  💸 *New sale\!* 
   
   #{customer.email} paid *$#{amount}* for #{product.name}\.
   
-  📊 *Quick Stats:*
-  • MRR: $#{Profitable.mrr}
-  • Total customers: $#{Profitable.total_customers}
+  📈 MRR: $#{Profitable.mrr}
+  📈 Total customers: $#{Profitable.total_customers}
   
-  [🔗 Details](#{admin_subscription_url(subscription)})
+  [🔗 View purchase details](#{admin_subscription_url(subscription)})
 MSG
 
 Telegrama.send_message(message, formatting: { obfuscate_emails: true })
