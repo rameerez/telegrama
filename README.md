@@ -22,7 +22,7 @@ I use it all the time to alert me of new sales, important notifications, and dai
 > 
 > [🔗 View purchase details](https://example.com/admin/subscriptions/123)
 
-Which is a beautifully formatted message you'll in Telegram just with just this:
+Which is a beautifully formatted message you'll in Telegram with only this:
 
 ```ruby
 message = <<~MSG
@@ -39,8 +39,9 @@ MSG
 Telegrama.send_message(message, formatting: { obfuscate_emails: true })
 ```
 
-Note how the email gets redacted automatically to avoid leaking personal information (john.doe@gmail.com -> joh...e@gmail.com)
+Note how the email gets redacted automatically to avoid leaking personal information (`john.doe@gmail.com` -> `joh...e@gmail.com`)
 
+The gem sanitizes weird characters, you can also escape Markdown, HTML, etc.
 
 For the MRR and revenue metrics you can use my gem [`profitable`](https://github.com/rameerez/profitable); and if you have different group chats for marketing, management, etc. you can send different messages with different information to each of them:
 
