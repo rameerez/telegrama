@@ -20,11 +20,11 @@ I use it all the time to alert me of new sales, important notifications, and dai
 > 
 > • MRR: $12,345
 > 
-> • Revenue this month: $3,456
+> • Total customers: 1,234
 > 
 > [🔗 View details](https://example.com/admin/subscriptions/123)
 
-Which is a beautifully formatted message you'll in Telegram just with something like:
+Which is a beautifully formatted message you'll in Telegram just with just this:
 
 ```ruby
 message = <<~MSG
@@ -33,8 +33,8 @@ message = <<~MSG
   #{customer.email} paid *$#{amount}* for #{product.name}\.
   
   📊 *Quick Stats:*
-  • MRR: $#{current_mrr}
-  • Revenue this month: $#{revenue_this_month}
+  • MRR: $#{Profitable.mrr}
+  • Total customers: $#{Profitable.total_customers}
   
   [🔗 Details](#{admin_subscription_url(subscription)})
 MSG
@@ -42,14 +42,17 @@ MSG
 Telegrama.send_message(message, formatting: { obfuscate_emails: true })
 ```
 
-Note how the email gets redacted automatically to avoid leaking personal information (john.doe@gmail.com -> joh...e@gmail.com); and if you have different group chats for marketing, management, etc. you can send different messages to them:
+Note how the email gets redacted automatically to avoid leaking personal information (john.doe@gmail.com -> joh...e@gmail.com)
+
+
+For the MRR and revenue metrics you can use my gem [`profitable`](https://github.com/rameerez/profitable); and if you have different group chats for marketing, management, etc. you can send different messages with different information to each of them:
 
 ```ruby
 Telegrama.send_message(a_general_message, chat_id: general_chat_id)
 Telegrama.send_message(marketing_message, chat_id: marketing_chat_id)
 ```
 
-The goal with this gem is to provide a straightforward, no-frills, minimal API to send Telegram messages reliably for admin purposes.
+The goal with this gem is to provide a straightforward, no-frills, minimal API to send Telegram messages reliably for admin purposes, without you having to write your own wrapper over the Telegram API.
 
 ## Quick start
 
