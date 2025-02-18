@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    telegrama (0.1.0)
+    telegrama (0.1.1)
 
 GEM
   remote: https://rubygems.org/
