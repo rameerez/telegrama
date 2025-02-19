@@ -74,6 +74,10 @@ Telegrama.configure do |config|
   config.chat_id   = Rails.application.credentials.dig(Rails.env.to_sym, :telegram, :chat_id)
   config.default_parse_mode = 'MarkdownV2'
   
+  # Optional prefix/suffix for all messages (useful to identify messages from different apps or environments)
+  config.message_prefix = nil  # Will be prepended to all messages if set
+  config.message_suffix = nil  # Will be appended to all messages if set
+  
   # Default formatting options
   config.formatting_options = {
     escape_markdown: true,    # Escape markdown special characters
@@ -104,6 +108,43 @@ Sometimes you want to report user actions including a sufficiently identifiable 
 ### Overriding defaults with options
 
 You can pass an options hash to `Telegrama.send_message` to override default behavior on a per‑message basis:
+
+### Message Prefix and Suffix
+
+You may have multiple applications sending messages to the same Telegram group chat, and it can be hard to identify which message came from which application. Using message prefixes and suffixes, you can easily label messages from different sources:
+
+```ruby
+# Label which environment this message is coming from
+config.message_prefix = "[#{Rails.env}] \n"
+
+# Or for different applications:
+config.message_prefix = "[🛍️ Shop App] \n"
+config.message_suffix = "\n--\nSent from Shop App"
+
+config.message_prefix = "[📊 Analytics] \n"
+config.message_suffix = "\n--\nSent from Analytics"
+```
+
+This way, when multiple applications send messages to the same chat, you'll see:
+```
+[🛍️ Shop App] 
+New order received: $99.99
+--
+Sent from Shop App
+
+[📊 Analytics] 
+Daily Report: 150 new users today
+--
+Sent from Analytics
+```
+
+Both `message_prefix` and `message_suffix` are optional and can be used independently. They're particularly useful for:
+- Distinguishing between staging and production environments
+- Identifying messages from different microservices
+- Adding environment-specific tags or warnings
+- Including standardized footers or timestamps
+
+### `send_message` options
 
 - **`chat_id`**
   *Override the default chat ID set in your configuration.*

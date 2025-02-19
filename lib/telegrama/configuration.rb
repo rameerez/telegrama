@@ -16,6 +16,12 @@ module Telegrama
     # Whether to disable web page previews by default.
     attr_accessor :disable_web_page_preview
 
+    # Optional prefix to prepend to all messages (e.g. "[MyApp] \n")
+    attr_accessor :message_prefix
+
+    # Optional suffix to append to all messages (e.g. "\n-- Sent from MyApp")
+    attr_accessor :message_suffix
+
     # =========================================
     # Formatting Options
     # =========================================
@@ -44,6 +50,10 @@ module Telegrama
       # Defaults for message formatting
       @default_parse_mode = 'MarkdownV2'
       @disable_web_page_preview = true
+
+      # Message prefix/suffix defaults to nil (no prefix/suffix)
+      @message_prefix = nil
+      @message_suffix = nil
 
       # Sensible defaults for formatting options.
       @formatting_options = {

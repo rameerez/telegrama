@@ -2,7 +2,7 @@ module Telegrama
   module Formatter
     MARKDOWN_SPECIAL_CHARS = %w[_ * [ ] ( ) ~ ` > # + - = | { } . !].freeze
     # Characters that should always be escaped in Telegram messages, even when Markdown is enabled
-    ALWAYS_ESCAPE_CHARS = %w[. !].freeze
+    ALWAYS_ESCAPE_CHARS = %w[. ! -].freeze
     # Characters used for Markdown formatting that need special handling
     MARKDOWN_FORMAT_CHARS = %w[* _].freeze
 
@@ -12,6 +12,14 @@ module Telegrama
       opts = defaults.merge(options)
 
       text = text.to_s
+
+      # Apply prefix and suffix if configured
+      prefix = Telegrama.configuration.message_prefix
+      suffix = Telegrama.configuration.message_suffix
+
+      text = "#{prefix}#{text}" if prefix
+      text = "#{text}#{suffix}" if suffix
+
       text = obfuscate_emails(text) if opts[:obfuscate_emails]
       text = escape_html(text)    if opts[:escape_html]
       if opts[:escape_markdown]
@@ -21,6 +29,7 @@ module Telegrama
         text = escape_special_chars(text)
       end
       text = truncate(text, opts[:truncate]) if opts[:truncate]
+
       text
     end
 
