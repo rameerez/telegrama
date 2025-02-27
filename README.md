@@ -190,6 +190,32 @@ Telegrama.send_message("Hello asynchronously!")
 
 will enqueue a job on the specified queue (`deliver_message_queue`) rather than sending the message immediately.
 
+## Robust message delivery with fallback cascade
+
+Telegrama implements a sophisticated fallback system to ensure your messages are delivered even when formatting issues occur:
+
+### Multi-level fallback system
+
+1. **Primary Attempt**: First tries to send the message with your configured formatting (MarkdownV2 by default)
+2. **HTML Fallback**: If MarkdownV2 fails, automatically converts and attempts delivery with HTML formatting
+3. **Plain Text Fallback**: As a last resort, strips all formatting and sends as plain text
+4. **Emergency Response**: Even if all delivery attempts fail, your application continues running without exceptions
+
+This ensures that critical notifications always reach their destination, regardless of formatting complexities.
+
+## Testing
+
+The gem includes a comprehensive test suite.
+
+To run the tests:
+
+```bash
+bundle install
+bundle exec rake test
+```
+
+The test suite uses SQLite3 in-memory database and requires no additional setup.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
