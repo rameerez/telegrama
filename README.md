@@ -203,6 +203,43 @@ Telegrama implements a sophisticated fallback system to ensure your messages are
 
 This ensures that critical notifications always reach their destination, regardless of formatting complexities.
 
+## Advanced formatting features
+
+Telegrama includes a sophisticated state machine-based markdown formatter that properly handles:
+
+- **Nested Formatting**: Correctly formats complex nested elements like *bold text with _italic_ words*
+- **Code Blocks**: Supports both inline `code` and multi-line code blocks with language highlighting
+- **Special Character Escaping**: Automatically handles escaping of special characters like !, ., etc.
+- **URL Safety**: Properly formats URLs with special characters while maintaining clickability
+- **Email Obfuscation**: Implements privacy-focused email transformation (joh...e@example.com)
+- **Error Recovery**: Gracefully handles malformed markdown without breaking your messages
+
+The formatter is designed to be robust even with complex inputs, ensuring your messages always look great in Telegram:
+
+```ruby
+# Complex formatting example that works perfectly
+message = <<~MSG
+  📊 *Monthly Report*
+
+  _Summary of #{Date.today.strftime('%B %Y')}_
+
+  *Key metrics*:
+  - Revenue: *$#{revenue}*
+  - New users: *#{new_users}*
+  - Active users: *#{active_users}*
+
+  ```ruby
+  # Sample code that will be properly formatted
+  def calculate_growth(current, previous)
+    ((current.to_f / previous) - 1) * 100
+  end
+  ```
+
+  🔗 [View full dashboard](#{dashboard_url})
+MSG
+
+Telegrama.send_message(message)
+
 ## Testing
 
 The gem includes a comprehensive test suite.
