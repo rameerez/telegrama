@@ -5,8 +5,6 @@ Bundler.setup
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
-require "redcarpet"
-
 # Add ActiveJob for testing
 require "active_job"
 
