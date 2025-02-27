@@ -34,6 +34,17 @@ module Telegrama
     #   :truncate          (Integer) - Maximum allowed message length.
     attr_accessor :formatting_options
 
+    # =========================================
+    # Client Options
+    # =========================================
+
+    # Client options for API connection and request handling
+    # Available keys:
+    #   :timeout          (Integer) - API request timeout in seconds.
+    #   :retry_count      (Integer) - Number of retries for failed requests.
+    #   :retry_delay      (Integer) - Delay between retries in seconds.
+    attr_accessor :client_options
+
     # Whether to deliver messages asynchronously via ActiveJob.
     # Defaults to false
     attr_accessor :deliver_message_async
@@ -63,6 +74,13 @@ module Telegrama
         truncate: 4096
       }
 
+      # Client options
+      @client_options = {
+        timeout: 30,
+        retry_count: 3,
+        retry_delay: 1
+      }
+
       @deliver_message_async = false
       @deliver_message_queue = 'default'
     end
@@ -73,6 +91,7 @@ module Telegrama
       validate_bot_token!
       validate_default_parse_mode!
       validate_formatting_options!
+      validate_client_options!
       true
     end
 
@@ -106,6 +125,21 @@ module Telegrama
         truncate_val = formatting_options[:truncate]
         unless truncate_val.is_a?(Integer) && truncate_val.positive?
           raise ArgumentError, "Telegrama configuration error: formatting_options[:truncate] must be a positive integer."
+        end
+      end
+    end
+
+    def validate_client_options!
+      unless client_options.is_a?(Hash)
+        raise ArgumentError, "Telegrama configuration error: client_options must be a hash."
+      end
+
+      [:timeout, :retry_count, :retry_delay].each do |key|
+        if client_options.key?(key)
+          val = client_options[key]
+          unless val.is_a?(Integer) && val.positive?
+            raise ArgumentError, "Telegrama configuration error: client_options[:#{key}] must be a positive integer."
+          end
         end
       end
     end

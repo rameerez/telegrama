@@ -28,7 +28,7 @@ module Telegrama
 
     # Sends a message using the configured settings.
     # Before sending, we validate the configuration.
-    # This way, if nothing’s been set up, we get a descriptive error instead of a low-level one.
+    # This way, if nothing's been set up, we get a descriptive error instead of a low-level one.
     def send_message(message, options = {})
       configuration.validate!
       if configuration.deliver_message_async
@@ -38,5 +38,13 @@ module Telegrama
       end
     end
 
+    # Helper method for logging errors
+    def log_error(message)
+      if defined?(Rails)
+        Rails.logger.error("[Telegrama] #{message}")
+      else
+        warn("[Telegrama] #{message}")
+      end
+    end
   end
 end
