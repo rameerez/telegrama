@@ -92,7 +92,25 @@ module Telegrama
     # @param text [String] The text to process
     # @return [String] The formatted text
     def self.tokenize_and_format(text)
-      tokenizer = MarkdownTokenizer.new(text)
+      # Special handling for links with the Markdown format [text](url)
+      # This needs to be done before tokenizing to preserve link structure
+      link_fixed_text = text.gsub(/\[([^\]]+)\]\(([^)]+)\)/) do |match|
+        # Extract link text and URL
+        text_part = $1
+        url_part = $2
+
+        # Handle escaping within link text
+        text_part = text_part.gsub(/([_*\[\]()~`>#+=|{}.!\\])/) { |m| "\\#{m}" }
+
+        # Escape special characters in URL (except parentheses which define URL boundaries)
+        url_part = url_part.gsub(/([_*\[\]~`>#+=|{}.!\\])/) { |m| "\\#{m}" }
+
+        # Rebuild the link with proper escaping
+        "[#{text_part}](#{url_part})"
+      end
+
+      # Process the text with fixed links using tokenizer
+      tokenizer = MarkdownTokenizer.new(link_fixed_text)
       tokenizer.process
     end
 
@@ -164,10 +182,11 @@ module Telegrama
           enter_state(:italic)
           @result += '_'
           advance
-        elsif char == '[' && !escaped?
-          enter_state(:link_text)
-          @result += '['
-          advance
+        elsif char == '[' && !escaped? && looking_at_markdown_link?
+          # We're at the start of a Markdown link - add it directly since we preprocessed it
+          length = get_complete_link_length
+          @result += @text[@position, length]
+          advance(length)
         elsif char == '\\' && !escaped?
           handle_escape_sequence
         else
@@ -258,7 +277,9 @@ module Telegrama
         elsif char == '\\' && !escaped?
           handle_escape_sequence
         else
-          handle_formatting_char
+          # Don't escape formatting chars in link text - they're handled differently
+          @result += char
+          advance
         end
       end
 
@@ -273,15 +294,9 @@ module Telegrama
         elsif char == '\\' && !escaped?
           handle_escape_sequence
         else
-          # Explicitly ensure dots and other special characters are escaped in URLs
-          if MARKDOWN_SPECIAL_CHARS.include?(char) && char != '(' && char != ')'
-            # Add a special case to make URLs tests pass
-            if char == '.' && (@result.include?("https://example") || @result.include?("http://example"))
-              # Make sure there's at least one escaped dot for test assertions to pass
-              @result += "\\."
-              advance
-              return
-            end
+          # Escape special characters in URLs as required by Telegram MarkdownV2
+          # Note: Parentheses in URLs need special handling
+          if MARKDOWN_SPECIAL_CHARS.include?(char) && !['(', ')'].include?(char)
             @result += "\\"
           end
           @result += char
@@ -410,6 +425,20 @@ module Telegrama
           @result += '```'
         end
         # We intentionally don't auto-close code blocks to match expected test behavior
+      end
+
+      # Check if we're looking at a complete Markdown link
+      def looking_at_markdown_link?
+        # Look ahead to see if this is a valid markdown link pattern
+        future_text = @text[@position..]
+        future_text =~ /^\[[^\]]+\]\([^)]+\)/
+      end
+
+      # Get the length of a complete Markdown link
+      def get_complete_link_length
+        future_text = @text[@position..]
+        match = future_text.match(/^(\[[^\]]+\]\([^)]+\))/)
+        match ? match[1].length : 1
       end
     end
 
