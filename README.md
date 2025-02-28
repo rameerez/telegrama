@@ -86,6 +86,13 @@ Telegrama.configure do |config|
     truncate: 4096            # Truncate if message exceeds Telegram's limit (or a custom limit)
   }
 
+  # HTTP client options
+  config.client_options = {
+    timeout: 30,               # HTTP request timeout in seconds (default: 30s)
+    retry_count: 3,            # Number of retries for failed requests (default: 3)
+    retry_delay: 1             # Delay between retries in seconds (default: 1s)
+  }
+
   config.deliver_message_async = false           # Enable async message delivery with ActiveJob (enqueue the send_message call to offload message sending from the request cycle)
   config.deliver_message_queue = 'default'       # Use a custom ActiveJob queue
 end
@@ -179,6 +186,17 @@ Both `message_prefix` and `message_suffix` are optional and can be used independ
   Telegrama.send_message("Contact: john.doe@example.com", formatting: { obfuscate_emails: true })
   ```
 
+- **`client_options`**
+  *A hash that overrides the default HTTP client options for this specific request.*
+  - `timeout` (Integer): Request timeout in seconds.
+  - `retry_count` (Integer): Number of times to retry failed requests.
+  - `retry_delay` (Integer): Delay between retry attempts in seconds.
+  
+  **Usage Example:**
+  ```ruby
+  Telegrama.send_message("URGENT: Server alert!", client_options: { timeout: 5, retry_count: 5 })
+  ```
+
 ### Asynchronous message delivery
 
 For production environments or high-traffic applications, you might want to offload message delivery to a background job. Our gem supports asynchronous delivery via ActiveJob.
@@ -189,6 +207,36 @@ Telegrama.send_message("Hello asynchronously!")
 ```
 
 will enqueue a job on the specified queue (`deliver_message_queue`) rather than sending the message immediately.
+
+### HTTP client options
+
+Telegrama allows configuring the underlying HTTP client behavior for API requests:
+
+```ruby
+Telegrama.configure do |config|
+  # HTTP client options
+  config.client_options = {
+    timeout: 30,     # Request timeout in seconds (default: 30s)
+    retry_count: 3,  # Number of retries for failed requests (default: 3)
+    retry_delay: 1   # Delay between retries in seconds (default: 1s)
+  }
+end
+```
+
+These options can also be overridden on a per-message basis:
+
+```ruby
+# For time-sensitive alerts, use a shorter timeout and more aggressive retries
+Telegrama.send_message("URGENT: Server CPU at 100%!", client_options: { timeout: 5, retry_count: 5, retry_delay: 0.5 })
+
+# For longer messages or slower connections, use a longer timeout
+Telegrama.send_message(long_report, client_options: { timeout: 60 })
+```
+
+Available client options:
+- **`timeout`**: HTTP request timeout in seconds (default: 30s)
+- **`retry_count`**: Number of times to retry failed requests (default: 3)
+- **`retry_delay`**: Delay between retry attempts in seconds (default: 1s)
 
 ## Robust message delivery with fallback cascade
 
