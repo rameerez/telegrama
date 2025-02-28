@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = ["rubygems@rameerez.com"]
 
   spec.summary = "A tiny wrapper to send Telegram admin messages via the Telegram Bot API."
-  spec.description = "Send quick, simple admin / logging Telegram messages via a Telegram bot. Useful for Rails developers using Telegram messages for notifications, admin alerts, daily summaries, and status updates. Integrates with the Telegram Bot API."
+  spec.description = "Send quick, simple admin / logging Telegram messages via a Telegram bot. Useful for Rails developers using Telegram messages for notifications, admin alerts, daily summaries, and status updates. Parses and escapes Markdown for beautifully formatted MarkdownV2 messages compatible with the Telegram API. Integrates with the Telegram Bot API."
   spec.homepage = "https://github.com/rameerez/telegrama"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.1.0"
