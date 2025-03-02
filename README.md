@@ -264,7 +264,7 @@ Telegrama includes a sophisticated state machine-based markdown formatter that p
 
 The formatter is designed to be robust even with complex inputs, ensuring your messages always look great in Telegram:
 
-```ruby
+````ruby
 # Complex formatting example that works perfectly
 message = <<~MSG
   📊 *Monthly Report*
@@ -287,6 +287,7 @@ message = <<~MSG
 MSG
 
 Telegrama.send_message(message)
+````
 
 ## Testing
 
