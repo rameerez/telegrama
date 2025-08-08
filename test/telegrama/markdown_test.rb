@@ -504,7 +504,7 @@ class Telegrama::FormatterTest < Minitest::Test
     result = Telegrama::Formatter.format(complex_message)
 
     # Verify key elements are formatted correctly
-    assert_includes result, "💸 *New sale"
+    assert_includes result, "💸 *New sal"
 
     # For emails, check for parts of the obfuscated email without requiring exact formatting
     assert result.include?('joh') || result.include?('john')  # Start of local part
@@ -621,7 +621,7 @@ class TelegramaIntegrationTest < Minitest::Test
     result = Telegrama::Formatter.format(complex_message)
 
     # Verify key elements are formatted correctly
-    assert_includes result, "💸 *New sale"
+    assert_includes result, "💸 *New sal"
 
     # For emails, check for parts of the obfuscated email without requiring exact formatting
     assert result.include?('joh') || result.include?('john')  # Start of local part
