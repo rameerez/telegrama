@@ -1,8 +1,11 @@
 # 💬 `telegrama` – a tiny wrapper to send admin Telegram messages
 
-[![Gem Version](https://badge.fury.io/rb/telegrama.svg?v=0.1.1)](https://badge.fury.io/rb/telegrama?v=0.1.1)
+[![Gem Version](https://badge.fury.io/rb/telegrama.svg)](https://badge.fury.io/rb/telegrama)
 
-Send quick, simple admin / logging Telegram messages via a Telegram bot.
+> [!TIP]
+> **🚀 Ship your next Rails app 10x faster!** I've built **[RailsFast](https://railsfast.com)**, a production-ready Rails boilerplate template that comes with everything you need to launch a software business in days, not weeks.
+
+`telegrama` lets you send quick, simple admin / logging Telegram messages via a Telegram bot.
 
 Useful for Rails developers using Telegram messages for notifications, admin alerts, errors, logs, daily summaries, and status updates, like:
 
