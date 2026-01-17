@@ -5,6 +5,10 @@ Bundler.setup
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
+# SimpleCov must be loaded BEFORE any application code
+# Configuration is auto-loaded from .simplecov file
+require "simplecov"
+
 # Add ActiveJob for testing
 require "active_job"
 
@@ -13,6 +17,7 @@ require "telegrama"
 
 # Test framework
 require "minitest/autorun"
+require "minitest/mock"
 
 # WebMock for HTTP stubbing (proper test isolation)
 require "webmock/minitest"
