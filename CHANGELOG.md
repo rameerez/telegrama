@@ -1,3 +1,13 @@
+## [0.2.0] - 2026-01-17
+
+- Added Minitest test suite
+- Fixed duplicate Error class definition causing conflicts
+- Fixed missing `log_info` method
+- Fixed `parse_mode: nil` handling to properly respect explicit nil override
+- Fixed `strip_markdown` method to correctly strip markdown characters
+- Fixed `retry_delay` validation to accept float values (e.g., 0.5 seconds)
+- Added Ruby 3.5+ compatibility with `ostruct` dependency
+
 ## [0.1.3] - 2025-02-28
 
 - Added client options for retries and timeout
