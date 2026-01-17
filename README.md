@@ -1,6 +1,6 @@
 # 💬 `telegrama` – Send Telegram admin notifications in your Rails app
 
-[![Gem Version](https://badge.fury.io/rb/telegrama.svg)](https://badge.fury.io/rb/telegrama)
+[![Gem Version](https://badge.fury.io/rb/telegrama.svg)](https://badge.fury.io/rb/telegrama) [![Build Status](https://github.com/rameerez/telegrama/workflows/Tests/badge.svg)](https://github.com/rameerez/telegrama/actions)
 
 > [!TIP]
 > **🚀 Ship your next Rails app 10x faster!** I've built **[RailsFast](https://railsfast.com/?ref=telegrama)**, a production-ready Rails boilerplate template that comes with everything you need to launch a software business in days, not weeks. Go [check it out](https://railsfast.com/?ref=telegrama)!
