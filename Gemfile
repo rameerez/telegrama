@@ -7,3 +7,8 @@ gemspec
 
 gem "irb"
 gem "rake", "~> 13.0"
+
+group :test do
+  gem "webmock", "~> 3.23"
+  gem "minitest-reporters", "~> 1.6"
+end
