@@ -134,12 +134,21 @@ module Telegrama
         raise ArgumentError, "Telegrama configuration error: client_options must be a hash."
       end
 
-      [:timeout, :retry_count, :retry_delay].each do |key|
+      # timeout and retry_count must be positive integers
+      [:timeout, :retry_count].each do |key|
         if client_options.key?(key)
           val = client_options[key]
           unless val.is_a?(Integer) && val.positive?
             raise ArgumentError, "Telegrama configuration error: client_options[:#{key}] must be a positive integer."
           end
+        end
+      end
+
+      # retry_delay can be a positive integer or float (e.g., 0.5 seconds)
+      if client_options.key?(:retry_delay)
+        val = client_options[:retry_delay]
+        unless val.is_a?(Numeric) && val.positive?
+          raise ArgumentError, "Telegrama configuration error: client_options[:retry_delay] must be a positive number."
         end
       end
     end

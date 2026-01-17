@@ -38,6 +38,9 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", ">= 6.0.0"
 
+  # ostruct is being removed from Ruby's standard library in Ruby 3.5
+  spec.add_dependency "ostruct", ">= 0.5"
+
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
 end

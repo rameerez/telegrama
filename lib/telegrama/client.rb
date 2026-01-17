@@ -21,7 +21,8 @@ module Telegrama
       client_opts = client_opts.merge(@config)
 
       # Default to MarkdownV2 parse mode unless explicitly overridden
-      parse_mode = options[:parse_mode] || Telegrama.configuration.default_parse_mode
+      # Use key? to allow explicit nil override (for plain text without formatting)
+      parse_mode = options.key?(:parse_mode) ? options[:parse_mode] : Telegrama.configuration.default_parse_mode
 
       # Allow runtime formatting options, merging with configured defaults
       formatting_opts = options.delete(:formatting) || {}
@@ -159,6 +160,4 @@ module Telegrama
       defined?(Rails) && Rails.respond_to?(:logger) ? Rails.logger : Logger.new($stdout)
     end
   end
-
-  class Error < StandardError; end
 end

@@ -294,16 +294,13 @@ Telegrama.send_message(message)
 
 ## Testing
 
-The gem includes a comprehensive test suite.
+The gem includes a Minitest test suite.
 
 To run the tests:
 
 ```bash
-bundle install
 bundle exec rake test
 ```
-
-The test suite uses SQLite3 in-memory database and requires no additional setup.
 
 ## Development
 

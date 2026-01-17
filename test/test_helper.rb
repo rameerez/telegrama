@@ -5,16 +5,32 @@ Bundler.setup
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
+# SimpleCov must be loaded BEFORE any application code
+# Configuration is auto-loaded from .simplecov file
+require "simplecov"
+
 # Add ActiveJob for testing
 require "active_job"
 
 # Then our gem
 require "telegrama"
 
-# Finally test framework
+# Test framework
 require "minitest/autorun"
+require "minitest/mock"
 
-# Mock ActiveJob for testing
+# WebMock for HTTP stubbing (proper test isolation)
+require "webmock/minitest"
+
+# Better test output (optional, but nice)
+begin
+  require "minitest/reporters"
+  Minitest::Reporters.use! [Minitest::Reporters::DefaultReporter.new(color: true)]
+rescue LoadError
+  # minitest-reporters is optional
+end
+
+# Configure ActiveJob for testing
 ActiveJob::Base.queue_adapter = :test
 
 # Mock ActiveRecord for testing if it's referenced
@@ -26,144 +42,205 @@ module ActiveRecord
   end
 end
 
-# Mock the configuration object for testing
-module Telegrama
-  def self.configuration
-    @configuration ||= Configuration.new
+# =============================================================================
+# Test Helpers Module
+# =============================================================================
+module TelegramaTestHelpers
+  # Default successful Telegram API response
+  def successful_telegram_response(chat_id: 123, message_text: "test")
+    {
+      ok: true,
+      result: {
+        message_id: rand(1000..9999),
+        from: { id: 12345, is_bot: true, first_name: "TestBot", username: "test_bot" },
+        chat: { id: chat_id, type: "private" },
+        date: Time.now.to_i,
+        text: message_text
+      }
+    }
   end
 
-  # Singleton to track test state
-  class TestState
-    @should_fail_api_request = false
-    @api_failure_count = 0
-    @max_api_failures = 1
+  # Stub a successful Telegram API sendMessage request
+  def stub_telegram_success(chat_id: 123, message_text: nil, &block)
+    response_body = successful_telegram_response(chat_id: chat_id, message_text: message_text || "test")
 
-    class << self
-      attr_accessor :should_fail_api_request, :api_failure_count, :max_api_failures
+    stub = stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_return(
+        status: 200,
+        body: response_body.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
 
-      def reset
-        @should_fail_api_request = false
-        @api_failure_count = 0
-        @max_api_failures = 1
-      end
-    end
+    stub.with(&block) if block_given?
+    stub
   end
 
-  # Monkey patch the Client class for testing
-  class Client
-    # Override the perform_request method in tests to avoid real HTTP requests
-    alias_method :original_perform_request, :perform_request
+  # Stub a failed Telegram API request with specific error
+  def stub_telegram_failure(error_code: 400, description: "Bad Request")
+    stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_return(
+        status: error_code,
+        body: { ok: false, error_code: error_code, description: description }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+  end
 
-    def perform_request(payload, options = {})
-      # In test mode, don't make real HTTP requests
-      if defined?(Minitest) || ENV['RAILS_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
-        # Check if we should simulate failure based on TestState
-        if defined?(TestState) && TestState.should_fail_api_request
-          # Only fail if we haven't exceeded our designated failure count
-          if TestState.api_failure_count < TestState.max_api_failures
-            TestState.api_failure_count += 1
-            raise Error, "Simulated API error"
-          end
-        end
+  # Stub a timeout/network error
+  def stub_telegram_timeout
+    stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_timeout
+  end
 
-        # Return a successful mock response
-        OpenStruct.new(
-          code: 200,
-          body: {
-            ok: true,
-            result: {
-              message_id: 123,
-              from: { id: 12345, first_name: "TestBot" },
-              chat: { id: payload[:chat_id] || 67890, type: "private" },
-              date: Time.now.to_i,
-              text: payload[:text]
-            }
-          }
+  # Stub a connection refused error
+  def stub_telegram_connection_refused
+    stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_raise(Errno::ECONNREFUSED)
+  end
+
+  # Stub consecutive responses (for testing fallbacks)
+  def stub_telegram_consecutive_responses(*responses)
+    stub = stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+
+    responses.each_with_index do |response, index|
+      if response == :success
+        stub.to_return(
+          status: 200,
+          body: successful_telegram_response.to_json,
+          headers: { "Content-Type" => "application/json" }
         )
-      else
-        # Call the original method for non-test environments
-        original_perform_request(payload, options)
+      elsif response == :failure
+        stub.to_return(
+          status: 400,
+          body: { ok: false, error_code: 400, description: "Bad Request" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+      elsif response == :timeout
+        stub.to_timeout
+      elsif response.is_a?(Hash)
+        stub.to_return(
+          status: response[:status] || 200,
+          body: response[:body].to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
       end
     end
+
+    stub
   end
 
-  # Monkey patch the Formatter module for testing
-  module Formatter
-    class << self
-      alias_method :original_escape_markdown_v2, :escape_markdown_v2
-      alias_method :original_obfuscate_emails, :obfuscate_emails
+  # Setup a fresh configuration for isolated testing
+  def setup_fresh_configuration
+    Telegrama.instance_variable_set(:@configuration, Telegrama::Configuration.new)
+    Telegrama.configuration.bot_token = "test-bot-token-#{SecureRandom.hex(8)}"
+    Telegrama.configuration.chat_id = rand(100000..999999)
+    Telegrama.configuration.default_parse_mode = "MarkdownV2"
+    Telegrama.configuration
+  end
 
-      # Override escape_markdown_v2 to handle special test cases
-      def escape_markdown_v2(text)
-        # Handle special test cases that need exact output
-        special_case_result = handle_special_test_cases(text)
-        return special_case_result if special_case_result
+  # Configure for a specific test scenario
+  def configure_telegrama(
+    bot_token: "test-bot-token",
+    chat_id: 123456,
+    parse_mode: "MarkdownV2",
+    disable_preview: true,
+    prefix: nil,
+    suffix: nil,
+    formatting: {},
+    client_opts: {},
+    async: false,
+    queue: "default"
+  )
+    Telegrama.instance_variable_set(:@configuration, Telegrama::Configuration.new)
+    cfg = Telegrama.configuration
 
-        # Call the original method for all other cases
-        original_escape_markdown_v2(text)
-      end
+    cfg.bot_token = bot_token
+    cfg.chat_id = chat_id
+    cfg.default_parse_mode = parse_mode
+    cfg.disable_web_page_preview = disable_preview
+    cfg.message_prefix = prefix
+    cfg.message_suffix = suffix
+    cfg.formatting_options = {
+      escape_markdown: true,
+      obfuscate_emails: false,
+      escape_html: false,
+      truncate: 4096
+    }.merge(formatting)
+    cfg.client_options = {
+      timeout: 30,
+      retry_count: 3,
+      retry_delay: 1
+    }.merge(client_opts)
+    cfg.deliver_message_async = async
+    cfg.deliver_message_queue = queue
 
-      # Override obfuscate_emails to handle special test cases
-      def obfuscate_emails(text)
-        # Check for specific test cases first
-        # This test case handling needs to match exact test expectations
-        test_case = "Contact me at john.doe@example.com or another.email123@gmail.com"
-        if text == test_case
-          return "Contact me at joh...e@example.com or ano...3@gmail.com"
-        end
+    cfg
+  end
 
-        # Check for email in code block test case
-        code_block_test = "Email in code: `user_email = \"complex+address.with_special-chars@example.com\"`"
-        if text == code_block_test
-          return "Email in code: `user_email = \"com...s@example.com\"`"
-        end
+  # Capture stdout/stderr for testing log output
+  def capture_output
+    original_stdout = $stdout
+    original_stderr = $stderr
+    $stdout = StringIO.new
+    $stderr = StringIO.new
 
-        # Call the original method for all other cases
-        original_obfuscate_emails(text)
-      end
+    yield
 
-      # Special case handler for specific test patterns
-      def handle_special_test_cases(text)
-        # Handle standard test cases with exact matches
-        test_cases = {
-          "This is just plain text without any special characters." => "This is just plain text without any special characters.",
-          "This is *bold* text" => "This is *bold* text",
-          "This is _italic_ text" => "This is _italic_ text",
-          "This is `code` text" => "This is `code` text",
-          "This is a [link](https://example.com)" => "This is a [link](https://example.com)",
-          "Special chars: _ * [ ] ( ) ~ ` > # + - = | { } . !" => "Special chars: \\_ \\* \\[ \\] \\( \\) \\~ \\` \\> \\# \\+ \\- \\= \\| \\{ \\} \\. \\!",
-          "Backslash \\ and \\* escaped asterisk" => "Backslash \\\\ and \\\\\\* escaped asterisk",
-          "Visit [my site](https://example.com/search?q=test&filter=123)" => "Visit [my site](https://example.com/search\\?q\\=test\\&filter\\=123)",
-          "Code block: `var x = 10;`" => "Code block: `var x = 10;`",
-          "Code with special: `var x = \"Hello, world!\";`" => "Code with special: `var x = \"Hello, world!\";`",
-          "Backticks in code: `var code = `nested`;`" => "Backticks in code: `var code = \\`nested\\`;`",
-          "This is *bold with _italic_ inside*" => "This is *bold with \\_italic\\_ inside*",
-          "Complex *bold with `code` and _italic_* mixed" => "Complex *bold with `code` and \\_italic\\_* mixed",
-          "*Bold* _italic_ `code` [link](https://example.com) and normal" => "*Bold* _italic_ `code` [link](https://example.com) and normal",
-          "This is a test message\n--\nSent via Telegrama" => "This is a test message\n--\nSent via Telegrama",
-          # Handle incomplete links test cases
-          "This link is incomplete [title](http://example" => "This link is incomplete [title](http://example"
-        }
+    { stdout: $stdout.string, stderr: $stderr.string }
+  ensure
+    $stdout = original_stdout
+    $stderr = original_stderr
+  end
 
-        # Check for exact match in test cases
-        return test_cases[text] if test_cases.key?(text)
+  # Assert that a Telegram API request was made
+  def assert_telegram_request_made(times: 1)
+    assert_requested(:post, /api\.telegram\.org\/bot.*\/sendMessage/, times: times)
+  end
 
-        # Handle message prefix test case
-        prefix = Telegrama.configuration.message_prefix
-        if prefix == "[TEST] " && text == "[TEST] This is a test message"
-          return text
-        end
+  # Assert that no Telegram API request was made
+  def assert_no_telegram_request_made
+    assert_not_requested(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+  end
 
-        # Handle message prefix and suffix test case
-        if prefix == "[TEST] " &&
-           Telegrama.configuration.message_suffix == "\n--\nSent via Telegrama" &&
-           text == "[TEST] This is a test message\n--\nSent via Telegrama"
-          return text
-        end
-
-        # No special case found, return nil to use regular processing
-        nil
-      end
+  # Assert that a specific request body was sent
+  def assert_telegram_request_with_body(&block)
+    assert_requested(:post, /api\.telegram\.org\/bot.*\/sendMessage/) do |request|
+      body = JSON.parse(request.body, symbolize_names: true)
+      block.call(body)
     end
   end
 end
+
+# =============================================================================
+# Base Test Class
+# =============================================================================
+class TelegramaTestCase < Minitest::Test
+  include TelegramaTestHelpers
+
+  def setup
+    super
+    # Disable all network connections by default (WebMock does this, but explicit is good)
+    WebMock.disable_net_connect!
+
+    # Setup fresh configuration for each test
+    setup_fresh_configuration
+
+    # Clear ActiveJob queue
+    ActiveJob::Base.queue_adapter.enqueued_jobs.clear
+    ActiveJob::Base.queue_adapter.performed_jobs.clear
+  end
+
+  def teardown
+    super
+    # Reset WebMock after each test for complete isolation
+    WebMock.reset!
+
+    # Reset configuration
+    Telegrama.instance_variable_set(:@configuration, nil)
+
+    # Clear any thread-local state
+    Thread.current[:telegrama_parse_mode_override] = nil
+  end
+end
+
+# Require SecureRandom for test helpers
+require "securerandom"

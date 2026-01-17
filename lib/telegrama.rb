@@ -40,10 +40,19 @@ module Telegrama
 
     # Helper method for logging errors
     def log_error(message)
-      if defined?(Rails)
+      if defined?(Rails) && Rails.respond_to?(:logger)
         Rails.logger.error("[Telegrama] #{message}")
       else
         warn("[Telegrama] #{message}")
+      end
+    end
+
+    # Helper method for logging info messages
+    def log_info(message)
+      if defined?(Rails) && Rails.respond_to?(:logger)
+        Rails.logger.info("[Telegrama] #{message}")
+      else
+        puts("[Telegrama] #{message}")
       end
     end
   end

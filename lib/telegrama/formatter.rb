@@ -473,8 +473,34 @@ module Telegrama
     # @param text [String] The text with markdown formatting
     # @return [String] The text with markdown formatting removed
     def self.strip_markdown(text)
-      # Remove all markdown syntax for plain text delivery
-      text.gsub(/[*_~`]|\[.*?\]\(.*?\)/, '')
+      result = text.dup
+
+      # Remove markdown links [text](url) -> text
+      result.gsub!(/\[([^\]]*)\]\([^)]*\)/, '\1')
+
+      # Remove triple backtick code blocks (preserve content)
+      result.gsub!(/```[a-z]*\n?(.*?)```/m, '\1')
+
+      # Remove inline code backticks (preserve content)
+      result.gsub!(/`([^`]*)`/, '\1')
+
+      # Remove bold formatting (both ** and *)
+      result.gsub!(/\*\*([^*]*)\*\*/, '\1')
+      result.gsub!(/\*([^*]*)\*/, '\1')
+
+      # Remove italic formatting (both __ and _)
+      result.gsub!(/__([^_]*)__/, '\1')
+      result.gsub!(/(?<![\\])_([^_]*)_/, '\1')
+
+      # Remove strikethrough
+      result.gsub!(/~~([^~]*)~~/, '\1')
+      result.gsub!(/~([^~]*)~/, '\1')
+
+      # Remove any remaining unmatched formatting characters at word boundaries
+      # but preserve them in the middle of words (like file_name)
+      result.gsub!(/(?<=\s)[*_~`]+|[*_~`]+(?=\s|$)/, '')
+
+      result
     end
 
     # Convert HTML to Telegram MarkdownV2 format
