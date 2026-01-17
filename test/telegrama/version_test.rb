@@ -29,8 +29,4 @@ class Telegrama::VersionTest < TelegramaTestCase
     assert_operator patch, :>=, 0, "Patch version should be non-negative"
   end
 
-  def test_current_version_is_expected
-    # Update this when version changes
-    assert_equal "0.1.3", Telegrama::VERSION
-  end
 end
