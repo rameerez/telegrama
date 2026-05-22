@@ -21,6 +21,10 @@ class Telegrama::ConfigurationTest < TelegramaTestCase
     assert_nil @config.chat_id
   end
 
+  def test_defaults_message_thread_id_is_nil
+    assert_nil @config.message_thread_id
+  end
+
   def test_defaults_parse_mode_is_markdownv2
     assert_equal "MarkdownV2", @config.default_parse_mode
   end
@@ -80,6 +84,11 @@ class Telegrama::ConfigurationTest < TelegramaTestCase
   def test_can_set_chat_id_as_negative_for_groups
     @config.chat_id = -1001234567890
     assert_equal(-1001234567890, @config.chat_id)
+  end
+
+  def test_can_set_message_thread_id
+    @config.message_thread_id = 42
+    assert_equal 42, @config.message_thread_id
   end
 
   def test_can_set_parse_mode_to_html
@@ -206,6 +215,57 @@ class Telegrama::ConfigurationTest < TelegramaTestCase
     @config.default_parse_mode = "html"  # Should be "HTML"
     error = assert_raises(ArgumentError) { @config.validate! }
     assert_includes error.message, "default_parse_mode"
+  end
+
+  # ===========================================================================
+  # Validation: message_thread_id Tests
+  # ===========================================================================
+
+  def test_validate_passes_with_nil_message_thread_id
+    @config.bot_token = "token"
+    @config.message_thread_id = nil
+
+    assert @config.validate!
+  end
+
+  def test_validate_passes_with_positive_message_thread_id
+    @config.bot_token = "token"
+    @config.message_thread_id = 42
+
+    assert @config.validate!
+  end
+
+  def test_validate_raises_error_when_message_thread_id_is_zero
+    @config.bot_token = "token"
+    @config.message_thread_id = 0
+
+    error = assert_raises(ArgumentError) { @config.validate! }
+    assert_includes error.message, "message_thread_id"
+    assert_includes error.message, "positive integer"
+  end
+
+  def test_validate_raises_error_when_message_thread_id_is_negative
+    @config.bot_token = "token"
+    @config.message_thread_id = -1
+
+    error = assert_raises(ArgumentError) { @config.validate! }
+    assert_includes error.message, "message_thread_id"
+  end
+
+  def test_validate_raises_error_when_message_thread_id_is_string
+    @config.bot_token = "token"
+    @config.message_thread_id = "42"
+
+    error = assert_raises(ArgumentError) { @config.validate! }
+    assert_includes error.message, "message_thread_id"
+  end
+
+  def test_validate_raises_error_when_message_thread_id_is_float
+    @config.bot_token = "token"
+    @config.message_thread_id = 42.5
+
+    error = assert_raises(ArgumentError) { @config.validate! }
+    assert_includes error.message, "message_thread_id"
   end
 
   # ===========================================================================

@@ -73,10 +73,12 @@ class TelegramaModuleTest < TelegramaTestCase
     Telegrama.configure do |config|
       config.bot_token = "new-token"
       config.chat_id = 999
+      config.message_thread_id = 42
     end
 
     assert_equal "new-token", Telegrama.configuration.bot_token
     assert_equal 999, Telegrama.configuration.chat_id
+    assert_equal 42, Telegrama.configuration.message_thread_id
   end
 
   # ===========================================================================
@@ -129,10 +131,12 @@ class TelegramaModuleTest < TelegramaTestCase
       chat_id: 123
     )
 
-    Telegrama.send_message("Test", chat_id: 999, parse_mode: "HTML")
+    Telegrama.send_message("Test", chat_id: 999, parse_mode: "HTML", message_thread_id: 42)
 
     assert_telegram_request_with_body do |body|
-      body[:chat_id] == 999 && body[:parse_mode] == "HTML"
+      body[:chat_id] == 999 &&
+        body[:parse_mode] == "HTML" &&
+        body[:message_thread_id] == 42
     end
   end
 
@@ -148,6 +152,39 @@ class TelegramaModuleTest < TelegramaTestCase
 
     assert_telegram_request_with_body do |body|
       body[:chat_id] == 12345
+    end
+  end
+
+  def test_send_message_uses_default_message_thread_id
+    stub_telegram_success
+
+    Telegrama.configure do |config|
+      config.bot_token = "test-token"
+      config.chat_id = -1001234567890
+      config.message_thread_id = 42
+    end
+
+    Telegrama.send_message("Topic message")
+
+    assert_telegram_request_with_body do |body|
+      body[:chat_id] == -1001234567890 &&
+        body[:message_thread_id] == 42
+    end
+  end
+
+  def test_send_message_can_clear_default_message_thread_id
+    stub_telegram_success
+
+    Telegrama.configure do |config|
+      config.bot_token = "test-token"
+      config.chat_id = -1001234567890
+      config.message_thread_id = 42
+    end
+
+    Telegrama.send_message("General message", message_thread_id: nil)
+
+    assert_telegram_request_with_body do |body|
+      !body.key?(:message_thread_id)
     end
   end
 

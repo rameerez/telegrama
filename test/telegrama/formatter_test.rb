@@ -149,6 +149,21 @@ class Telegrama::FormatterTest < TelegramaTestCase
     assert_includes result, "\\)"
   end
 
+  def test_escapes_underscores_inside_identifiers
+    text = "Bot is_bot true; topic message_thread_id; method send_message"
+    result = Telegrama::Formatter.format(text)
+
+    assert_includes result, "is\\_bot"
+    assert_includes result, "message\\_thread\\_id"
+    assert_includes result, "send\\_message"
+  end
+
+  def test_preserves_italic_with_identifier_inside
+    result = Telegrama::Formatter.format("This is _message_thread_id_ text")
+
+    assert_includes result, "_message\\_thread\\_id_"
+  end
+
   def test_escapes_brackets_outside_links
     # Note: brackets that don't form a complete link pattern may be treated specially
     # The tokenizer checks for complete [text](url) patterns

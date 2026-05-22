@@ -53,6 +53,12 @@ Telegrama.send_message(a_general_message, chat_id: general_chat_id)
 Telegrama.send_message(marketing_message, chat_id: marketing_chat_id)
 ```
 
+You can also send messages to a specific topic inside a forum-enabled Telegram group:
+
+```ruby
+Telegrama.send_message(deploy_message, chat_id: engineering_group_id, message_thread_id: deployments_topic_id)
+```
+
 The goal with this gem is to provide a straightforward, no-frills, minimal API to send Telegram messages reliably for admin purposes, without you having to write your own wrapper over the Telegram API.
 
 ## Quick start
@@ -75,6 +81,7 @@ Then, create an initializer file under `config/initializers/telegrama.rb` and se
 Telegrama.configure do |config|
   config.bot_token = Rails.application.credentials.dig(Rails.env.to_sym, :telegram, :bot_token)
   config.chat_id   = Rails.application.credentials.dig(Rails.env.to_sym, :telegram, :chat_id)
+  config.message_thread_id = nil  # Optional default Telegram forum topic ID
   config.default_parse_mode = 'MarkdownV2'
   
   # Optional prefix/suffix for all messages (useful to identify messages from different apps or environments)
@@ -162,6 +169,22 @@ Both `message_prefix` and `message_suffix` are optional and can be used independ
   ```ruby
   Telegrama.send_message("Hello, alternate group!", chat_id: alternate_chat_id)
   ```
+
+- **`message_thread_id`**
+  *Send to a specific Telegram forum topic inside a group. Telegram's Bot API calls topic IDs `message_thread_id` values.*
+  **Usage Example:**
+  ```ruby
+  Telegrama.send_message("Deploy finished!", chat_id: engineering_group_id, message_thread_id: deployments_topic_id)
+  ```
+
+  You can get this ID from an incoming Telegram update sent inside the topic, or from the `ForumTopic` returned by Telegram's `createForumTopic` API.
+
+  You can also configure a default topic:
+  ```ruby
+  config.message_thread_id = deployments_topic_id
+  ```
+
+  To bypass a configured default topic for one message, pass `message_thread_id: nil`.
 
 - **`parse_mode`**
   *Override the default parse mode (default is `"MarkdownV2"`).*

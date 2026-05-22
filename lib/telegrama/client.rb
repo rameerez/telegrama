@@ -13,8 +13,19 @@ module Telegrama
 
     # Send a message with built-in error handling and fallbacks
     def send_message(message, options = {})
+      options = normalize_option_keys(options)
+
       # Allow chat ID override; fallback to config default
       chat_id = options.delete(:chat_id) || Telegrama.configuration.chat_id
+
+      # Allow topic/thread override; fallback to config default.
+      # Explicit nil means "send to the chat normally", even when a default topic is configured.
+      message_thread_id = if options.key?(:message_thread_id)
+                            options.delete(:message_thread_id)
+                          else
+                            Telegrama.configuration.message_thread_id
+                          end
+      validate_message_thread_id!(message_thread_id)
 
       # Get client options from config
       client_opts = Telegrama.configuration.client_options || {}
@@ -24,15 +35,11 @@ module Telegrama
       # Use key? to allow explicit nil override (for plain text without formatting)
       parse_mode = options.key?(:parse_mode) ? options[:parse_mode] : Telegrama.configuration.default_parse_mode
 
-      # Allow runtime formatting options, merging with configured defaults
-      formatting_opts = options.delete(:formatting) || {}
-
-      # Add parse mode specific options
-      if parse_mode == 'MarkdownV2'
-        formatting_opts[:escape_markdown] = true unless formatting_opts.key?(:escape_markdown)
-      elsif parse_mode == 'HTML'
-        formatting_opts[:escape_html] = true unless formatting_opts.key?(:escape_html)
-      end
+      # Allow runtime formatting options, merging with configured defaults.
+      # Escape behavior must match the outgoing Telegram parse mode; otherwise
+      # plain-text sends can display MarkdownV2 escape characters literally.
+      formatting_opts = normalize_option_keys(options.delete(:formatting) || {})
+      formatting_opts = formatting_options_for_parse_mode(parse_mode, formatting_opts)
 
       # Format the message text with our formatter
       formatted_message = Formatter.format(message, formatting_opts)
@@ -46,10 +53,11 @@ module Telegrama
         payload = {
           chat_id: chat_id,
           text: formatted_message,
-          parse_mode: parse_mode,
           disable_web_page_preview: options.fetch(:disable_web_page_preview,
                                                  Telegrama.configuration.disable_web_page_preview)
         }
+        payload[:parse_mode] = parse_mode unless parse_mode.nil?
+        payload[:message_thread_id] = message_thread_id unless message_thread_id.nil?
 
         # Additional options such as reply_markup can be added here
         payload.merge!(options.select { |k, _| [:reply_markup, :reply_to_message_id].include?(k) })
@@ -114,6 +122,43 @@ module Telegrama
     end
 
     private
+
+    def normalize_option_keys(options)
+      return {} if options.nil?
+
+      options.to_h.each_with_object({}) do |(key, value), normalized|
+        normalized[key.respond_to?(:to_sym) ? key.to_sym : key] = value
+      end
+    end
+
+    def validate_message_thread_id!(message_thread_id)
+      return if message_thread_id.nil?
+
+      unless message_thread_id.is_a?(Integer) && message_thread_id.positive?
+        raise ArgumentError, "Telegrama send_message option error: message_thread_id must be a positive integer."
+      end
+    end
+
+    def formatting_options_for_parse_mode(parse_mode, formatting_opts)
+      case parse_mode
+      when 'MarkdownV2'
+        {
+          escape_html: false
+        }.merge(formatting_opts).tap do |opts|
+          opts[:escape_markdown] = true unless opts.key?(:escape_markdown)
+        end
+      when 'HTML'
+        {
+          escape_markdown: false
+        }.merge(formatting_opts).tap do |opts|
+          opts[:escape_html] = true unless opts.key?(:escape_html)
+        end
+      when nil
+        formatting_opts.merge(escape_markdown: false, escape_html: false)
+      else
+        formatting_opts
+      end
+    end
 
     def perform_request(payload, options = {})
       uri = URI("https://api.telegram.org/bot#{Telegrama.configuration.bot_token}/sendMessage")

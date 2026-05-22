@@ -47,11 +47,59 @@ class Telegrama::SendMessageJobTest < TelegramaTestCase
     stub_telegram_success
 
     job = Telegrama::SendMessageJob.new
-    response = job.perform("Test", { chat_id: 999, parse_mode: "HTML" })
+    response = job.perform(
+      "Test",
+      { chat_id: 999, parse_mode: "HTML", message_thread_id: 42 }
+    )
 
     assert_equal 200, response.code
     assert_telegram_request_with_body do |body|
-      body[:chat_id] == 999 && body[:parse_mode] == "HTML"
+      body[:chat_id] == 999 &&
+        body[:parse_mode] == "HTML" &&
+        body[:message_thread_id] == 42
+    end
+  end
+
+  def test_perform_accepts_serialized_string_key_options
+    stub_telegram_success
+
+    job = Telegrama::SendMessageJob.new
+    response = job.perform(
+      "Test",
+      { "chat_id" => 999, "parse_mode" => "HTML", "message_thread_id" => 42 }
+    )
+
+    assert_equal 200, response.code
+    assert_telegram_request_with_body do |body|
+      body[:chat_id] == 999 &&
+        body[:parse_mode] == "HTML" &&
+        body[:message_thread_id] == 42
+    end
+  end
+
+  def test_perform_uses_configured_default_message_thread_id
+    Telegrama.configuration.message_thread_id = 42
+    stub_telegram_success
+
+    job = Telegrama::SendMessageJob.new
+    response = job.perform("Test")
+
+    assert_equal 200, response.code
+    assert_telegram_request_with_body do |body|
+      body[:message_thread_id] == 42
+    end
+  end
+
+  def test_perform_can_bypass_configured_default_message_thread_id
+    Telegrama.configuration.message_thread_id = 42
+    stub_telegram_success
+
+    job = Telegrama::SendMessageJob.new
+    response = job.perform("Test", { "message_thread_id" => nil })
+
+    assert_equal 200, response.code
+    assert_telegram_request_with_body do |body|
+      !body.key?(:message_thread_id)
     end
   end
 
@@ -83,12 +131,13 @@ class Telegrama::SendMessageJobTest < TelegramaTestCase
   end
 
   def test_enqueued_job_has_correct_arguments
-    Telegrama::SendMessageJob.perform_later("Test message", { chat_id: 999 })
+    Telegrama::SendMessageJob.perform_later("Test message", { chat_id: 999, message_thread_id: 42 })
 
     enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.last
     args = enqueued[:args]
     assert_equal "Test message", args[0]
     assert_equal 999, args[1]["chat_id"]
+    assert_equal 42, args[1]["message_thread_id"]
   end
 
   def test_enqueued_job_uses_default_queue
@@ -127,6 +176,38 @@ class Telegrama::SendMessageJobTest < TelegramaTestCase
     enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.last
     assert_equal "notifications", enqueued[:queue]
     assert_equal "Telegrama::SendMessageJob", enqueued[:job].name
+  end
+
+  def test_telegrama_send_message_enqueues_message_thread_id_when_async
+    configure_telegrama(
+      bot_token: "test-token",
+      chat_id: 123,
+      async: true,
+      queue: "notifications"
+    )
+
+    Telegrama.send_message("Async topic message", message_thread_id: 42)
+
+    enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.last
+    assert_equal "Async topic message", enqueued[:args][0]
+    assert_equal 42, enqueued[:args][1]["message_thread_id"]
+  end
+
+  def test_telegrama_send_message_preserves_explicit_nil_message_thread_id_when_async
+    configure_telegrama(
+      bot_token: "test-token",
+      chat_id: 123,
+      message_thread_id: 42,
+      async: true,
+      queue: "notifications"
+    )
+
+    Telegrama.send_message("Async general message", message_thread_id: nil)
+
+    enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.last
+    assert_equal "Async general message", enqueued[:args][0]
+    assert enqueued[:args][1].key?("message_thread_id")
+    assert_nil enqueued[:args][1]["message_thread_id"]
   end
 
   def test_telegrama_send_message_sync_does_not_enqueue
@@ -190,8 +271,7 @@ class Telegrama::SendMessageJobTest < TelegramaTestCase
     stub_telegram_success
 
     job = Telegrama::SendMessageJob.new
-    # When options is omitted, it defaults to {}
-    response = job.perform("Test")
+    response = job.perform("Test", nil)
 
     assert_equal 200, response.code
   end
@@ -229,6 +309,7 @@ class Telegrama::SendMessageJobTest < TelegramaTestCase
     # Complex options should serialize properly
     options = {
       chat_id: 12345,
+      message_thread_id: 42,
       parse_mode: "HTML",
       formatting: { obfuscate_emails: true }
     }
@@ -240,6 +321,7 @@ class Telegrama::SendMessageJobTest < TelegramaTestCase
 
     assert_equal "Test", args[0]
     assert_equal 12345, args[1]["chat_id"]
+    assert_equal 42, args[1]["message_thread_id"]
     assert_equal "HTML", args[1]["parse_mode"]
   end
 end
