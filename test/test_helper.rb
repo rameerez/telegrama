@@ -141,6 +141,7 @@ module TelegramaTestHelpers
   def configure_telegrama(
     bot_token: "test-bot-token",
     chat_id: 123456,
+    message_thread_id: nil,
     parse_mode: "MarkdownV2",
     disable_preview: true,
     prefix: nil,
@@ -155,6 +156,7 @@ module TelegramaTestHelpers
 
     cfg.bot_token = bot_token
     cfg.chat_id = chat_id
+    cfg.message_thread_id = message_thread_id
     cfg.default_parse_mode = parse_mode
     cfg.disable_web_page_preview = disable_preview
     cfg.message_prefix = prefix

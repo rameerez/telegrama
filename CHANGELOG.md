@@ -1,3 +1,23 @@
+## [Unreleased]
+
+## [0.3.0] - 2026-05-22
+
+- Added support for sending messages to Telegram forum topics with `message_thread_id`
+- Added `config.message_thread_id` as an optional default forum topic for all messages
+- Added per-message `message_thread_id:` overrides, including `message_thread_id: nil`
+  to bypass a configured default topic for one send
+- Preserved `message_thread_id` through async ActiveJob delivery, string-key serialized
+  options, and Markdown-to-HTML-to-plain-text fallback retries
+- Added validation so `message_thread_id` must be a positive integer when present
+- Fixed `parse_mode: nil` to omit the `parse_mode` parameter from Telegram API
+  requests instead of sending `null`
+- Fixed plain-text sends so `parse_mode: nil` does not inherit MarkdownV2 or HTML
+  escaping from configured formatting defaults
+- Fixed HTML sends so they do not inherit MarkdownV2 escaping from configured
+  formatting defaults
+- Fixed MarkdownV2 escaping for underscores inside identifiers such as `is_bot`,
+  `message_thread_id`, and `send_message`
+
 ## [0.2.0] - 2026-01-17
 
 - Added Minitest test suite

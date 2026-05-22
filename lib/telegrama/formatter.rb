@@ -179,8 +179,12 @@ module Telegrama
           @result += '*'
           advance
         elsif char == '_' && !escaped?
-          enter_state(:italic)
-          @result += '_'
+          if italic_opening_delimiter?
+            enter_state(:italic)
+            @result += '_'
+          else
+            @result += '\\_'
+          end
           advance
         elsif char == '[' && !escaped?
           if looking_at_markdown_link?
@@ -256,8 +260,12 @@ module Telegrama
         char = current_char
 
         if char == '_' && !escaped?
-          exit_state
-          @result += '_'
+          if italic_closing_delimiter?
+            exit_state
+            @result += '_'
+          else
+            @result += '\\_'
+          end
           advance
         elsif char == '\\' && !escaped?
           handle_escape_sequence
@@ -387,6 +395,34 @@ module Telegrama
       # Get the next character
       def next_char
         @chars[@position + 1]
+      end
+
+      # Get the previous character
+      def previous_char
+        @position.positive? ? @chars[@position - 1] : nil
+      end
+
+      # Underscores inside identifiers should render literally, not start italics.
+      def italic_opening_delimiter?
+        following = next_char
+        return false if following.nil? || whitespace?(following)
+
+        !word_char?(previous_char)
+      end
+
+      def italic_closing_delimiter?
+        previous = previous_char
+        return false if previous.nil? || whitespace?(previous)
+
+        !word_char?(next_char)
+      end
+
+      def word_char?(char)
+        !!(char =~ /[[:alnum:]]/)
+      end
+
+      def whitespace?(char)
+        !!(char =~ /\s/)
       end
 
       # Check if next character is one of the given characters

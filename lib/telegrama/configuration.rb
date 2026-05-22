@@ -10,6 +10,10 @@ module Telegrama
     # You can override this on the fly when sending messages.
     attr_accessor :chat_id
 
+    # Default message thread ID for sending messages to a forum topic.
+    # You can override this on the fly when sending messages.
+    attr_accessor :message_thread_id
+
     # Default parse mode for messages (e.g. "MarkdownV2" or "HTML").
     attr_accessor :default_parse_mode
 
@@ -57,6 +61,7 @@ module Telegrama
       # Credentials (must be set via initializer)
       @bot_token = nil
       @chat_id = nil
+      @message_thread_id = nil
 
       # Defaults for message formatting
       @default_parse_mode = 'MarkdownV2'
@@ -90,6 +95,7 @@ module Telegrama
     def validate!
       validate_bot_token!
       validate_default_parse_mode!
+      validate_message_thread_id!
       validate_formatting_options!
       validate_client_options!
       true
@@ -107,6 +113,14 @@ module Telegrama
       allowed_modes = ['MarkdownV2', 'HTML', nil]
       unless allowed_modes.include?(default_parse_mode)
         raise ArgumentError, "Telegrama configuration error: default_parse_mode must be one of #{allowed_modes.inspect}."
+      end
+    end
+
+    def validate_message_thread_id!
+      return if message_thread_id.nil?
+
+      unless message_thread_id.is_a?(Integer) && message_thread_id.positive?
+        raise ArgumentError, "Telegrama configuration error: message_thread_id must be a positive integer."
       end
     end
 

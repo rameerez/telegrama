@@ -117,6 +117,178 @@ class Telegrama::ClientTest < TelegramaTestCase
   end
 
   # ===========================================================================
+  # Forum Topic Tests
+  # ===========================================================================
+
+  def test_send_message_omits_message_thread_id_by_default
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message")
+
+    assert_telegram_request_with_body do |body|
+      !body.key?(:message_thread_id)
+    end
+  end
+
+  def test_send_message_includes_message_thread_id_when_provided
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message", message_thread_id: 42)
+
+    assert_telegram_request_with_body do |body|
+      body[:message_thread_id] == 42
+    end
+  end
+
+  def test_send_message_accepts_message_thread_id_with_string_key
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message", "message_thread_id" => 42)
+
+    assert_telegram_request_with_body do |body|
+      body[:message_thread_id] == 42
+    end
+  end
+
+  def test_send_message_uses_configured_default_message_thread_id
+    Telegrama.configuration.message_thread_id = 101
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message")
+
+    assert_telegram_request_with_body do |body|
+      body[:message_thread_id] == 101
+    end
+  end
+
+  def test_send_message_can_override_configured_message_thread_id
+    Telegrama.configuration.message_thread_id = 101
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message", message_thread_id: 202)
+
+    assert_telegram_request_with_body do |body|
+      body[:message_thread_id] == 202
+    end
+  end
+
+  def test_send_message_can_disable_configured_message_thread_id_with_nil
+    Telegrama.configuration.message_thread_id = 101
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message", message_thread_id: nil)
+
+    assert_telegram_request_with_body do |body|
+      !body.key?(:message_thread_id)
+    end
+  end
+
+  def test_send_message_can_disable_configured_message_thread_id_with_string_key_nil
+    Telegrama.configuration.message_thread_id = 101
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Test message", "message_thread_id" => nil)
+
+    assert_telegram_request_with_body do |body|
+      !body.key?(:message_thread_id)
+    end
+  end
+
+  def test_send_message_preserves_message_thread_id_when_falling_back
+    stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_return(
+        { status: 400, body: { ok: false, description: "Bad Request: can't parse entities" }.to_json },
+        { status: 200, body: successful_telegram_response.to_json }
+      )
+
+    client = Telegrama::Client.new
+    response = client.send_message("*bold* text", message_thread_id: 303)
+
+    assert_equal 200, response.code
+    assert_requested(:post, /api\.telegram\.org\/bot.*\/sendMessage/, times: 2) do |request|
+      JSON.parse(request.body, symbolize_names: true)[:message_thread_id] == 303
+    end
+  end
+
+  def test_send_message_preserves_message_thread_id_through_plain_text_fallback
+    stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_return(
+        { status: 400, body: { ok: false, description: "Bad Request: can't parse entities" }.to_json },
+        { status: 400, body: { ok: false, description: "Bad Request: can't parse entities" }.to_json },
+        { status: 200, body: successful_telegram_response.to_json }
+      )
+
+    client = Telegrama::Client.new
+    response = client.send_message("*bold* text", message_thread_id: 303)
+
+    assert_equal 200, response.code
+
+    requests = WebMock::RequestRegistry.instance.requested_signatures.hash.keys
+    payloads = requests.map { |request| JSON.parse(request.body, symbolize_names: true) }
+
+    assert_equal [303, 303, 303], payloads.map { |payload| payload[:message_thread_id] }
+    refute payloads.last.key?(:parse_mode)
+  end
+
+  def test_send_message_does_not_mutate_options
+    stub_telegram_success
+
+    options = {
+      chat_id: 999,
+      message_thread_id: 42,
+      parse_mode: "HTML",
+      formatting: { escape_html: true },
+      disable_web_page_preview: false
+    }
+    original_options = Marshal.load(Marshal.dump(options))
+
+    client = Telegrama::Client.new
+    client.send_message("Test message", options)
+
+    assert_equal original_options, options
+  end
+
+  def test_send_message_rejects_zero_message_thread_id
+    client = Telegrama::Client.new
+
+    error = assert_raises(ArgumentError) do
+      client.send_message("Test message", message_thread_id: 0)
+    end
+
+    assert_includes error.message, "message_thread_id"
+    assert_no_telegram_request_made
+  end
+
+  def test_send_message_rejects_negative_message_thread_id
+    client = Telegrama::Client.new
+
+    error = assert_raises(ArgumentError) do
+      client.send_message("Test message", message_thread_id: -1)
+    end
+
+    assert_includes error.message, "message_thread_id"
+    assert_no_telegram_request_made
+  end
+
+  def test_send_message_rejects_string_message_thread_id
+    client = Telegrama::Client.new
+
+    error = assert_raises(ArgumentError) do
+      client.send_message("Test message", message_thread_id: "42")
+    end
+
+    assert_includes error.message, "message_thread_id"
+    assert_no_telegram_request_made
+  end
+
+  # ===========================================================================
   # Parse Mode Override Tests
   # ===========================================================================
 
@@ -138,7 +310,66 @@ class Telegrama::ClientTest < TelegramaTestCase
     client.send_message("Test message", parse_mode: nil)
 
     assert_telegram_request_with_body do |body|
-      body[:parse_mode].nil?
+      !body.key?(:parse_mode)
+    end
+  end
+
+  def test_send_message_with_nil_parse_mode_sends_plain_text_without_markdown_escaping
+    Telegrama.configuration.message_prefix = "*~ Test App ~*\n\n"
+    stub_telegram_success
+
+    message = "Timestamp UTC: 2026-05-22T01:30:01Z\n" \
+              "Gem: telegrama 0.3.0\n" \
+              "Bot: @test_bot (id 123, is_bot true)\n" \
+              "Chat ID: -1003778147828\n" \
+              "Topic/message_thread_id: 5019"
+
+    client = Telegrama::Client.new
+    client.send_message(message, parse_mode: nil)
+
+    assert_telegram_request_with_body do |body|
+      !body.key?(:parse_mode) &&
+        body[:text] == "*~ Test App ~*\n\n#{message}"
+    end
+  end
+
+  def test_send_message_omits_parse_mode_when_default_parse_mode_is_nil
+    Telegrama.configuration.default_parse_mode = nil
+    Telegrama.configuration.message_prefix = "*~ Test App ~*\n\n"
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Version 0.3.0 (plain text)")
+
+    assert_telegram_request_with_body do |body|
+      !body.key?(:parse_mode) &&
+        body[:text] == "*~ Test App ~*\n\nVersion 0.3.0 (plain text)"
+    end
+  end
+
+  def test_send_message_with_html_parse_mode_does_not_markdown_escape
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Version 0.3.0 & <ok>", parse_mode: "HTML")
+
+    assert_telegram_request_with_body do |body|
+      body[:parse_mode] == "HTML" &&
+        body[:text] == "Version 0.3.0 &amp; &lt;ok&gt;"
+    end
+  end
+
+  def test_send_message_with_markdownv2_escapes_identifier_underscores
+    stub_telegram_success
+
+    client = Telegrama::Client.new
+    client.send_message("Bot is_bot true; Topic message_thread_id; Method send_message")
+
+    assert_telegram_request_with_body do |body|
+      body[:parse_mode] == "MarkdownV2" &&
+        body[:text].include?("is\\_bot") &&
+        body[:text].include?("message\\_thread\\_id") &&
+        body[:text].include?("send\\_message")
     end
   end
 
@@ -275,6 +506,27 @@ class Telegrama::ClientTest < TelegramaTestCase
 
     assert_equal 200, response.code
     assert_telegram_request_made(times: 3)
+  end
+
+  def test_plain_text_fallback_omits_parse_mode
+    stub_request(:post, /api\.telegram\.org\/bot.*\/sendMessage/)
+      .to_return(
+        { status: 400, body: { ok: false, description: "Bad Request: can't parse entities" }.to_json },
+        { status: 400, body: { ok: false, description: "Bad Request: can't parse entities" }.to_json },
+        { status: 200, body: successful_telegram_response.to_json }
+      )
+
+    client = Telegrama::Client.new
+    response = client.send_message("*bold* text")
+
+    assert_equal 200, response.code
+
+    requests = WebMock::RequestRegistry.instance.requested_signatures.hash.keys
+    payloads = requests.map { |request| JSON.parse(request.body, symbolize_names: true) }
+
+    assert_equal "MarkdownV2", payloads[0][:parse_mode]
+    assert_equal "HTML", payloads[1][:parse_mode]
+    refute payloads[2].key?(:parse_mode)
   end
 
   def test_raises_error_after_all_fallbacks_exhausted
