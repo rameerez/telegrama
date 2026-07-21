@@ -7,6 +7,15 @@ module Telegrama
     # Characters used for Markdown formatting that need special handling
     MARKDOWN_FORMAT_CHARS = %w[* _].freeze
 
+    # Escapes every MarkdownV2-reserved character (plus backslash) inside link
+    # TEXT. Derived from MARKDOWN_SPECIAL_CHARS so the two can never drift: a
+    # hand-typed copy of this class was missing '-', which let hyphenated link
+    # labels ("[GPS-risk](url)") reach Telegram unescaped — and the API rejects
+    # the ENTIRE message, not just the link, so delivery fell back to raw
+    # unformatted text. (URL parts keep their own narrower class below: per the
+    # MarkdownV2 spec, inside the (...) part only ')' and '\' MUST be escaped.)
+    LINK_TEXT_ESCAPE_REGEX = /([#{Regexp.escape((MARKDOWN_SPECIAL_CHARS + [ "\\" ]).join)}])/
+
     # Error class for Markdown formatting issues
     class MarkdownError < StandardError; end
 
@@ -100,7 +109,7 @@ module Telegrama
         url_part = $2
 
         # Handle escaping within link text
-        text_part = text_part.gsub(/([_*\[\]()~`>#+=|{}.!\\])/) { |m| "\\#{m}" }
+        text_part = text_part.gsub(LINK_TEXT_ESCAPE_REGEX) { |m| "\\#{m}" }
 
         # Escape special characters in URL (except parentheses which define URL boundaries)
         url_part = url_part.gsub(/([_*\[\]~`>#+=|{}.!\\])/) { |m| "\\#{m}" }

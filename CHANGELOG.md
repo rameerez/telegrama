@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-22
+
+- Fixed MarkdownV2 escaping for `-` inside link text: the link-text escape
+  class was missing the hyphen, so a label like `[GPS-risk](url)` reached
+  Telegram unescaped — the API rejects the entire message ("Character '-' is
+  reserved and must be escaped") and delivery fell back to unformatted plain
+  text. The escape regex is now derived from `MARKDOWN_SPECIAL_CHARS` so the
+  two can never drift apart again.
+
 ## [0.3.0] - 2026-05-22
 
 - Added support for sending messages to Telegram forum topics with `message_thread_id`

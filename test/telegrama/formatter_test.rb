@@ -240,6 +240,26 @@ class Telegrama::FormatterTest < TelegramaTestCase
     assert_includes result, "Link"
   end
 
+  def test_link_text_with_hyphen_is_escaped
+    # Regression (2026-07-22): the link-text escape class was hand-typed and
+    # missing '-', so a hyphenated label ("GPS-risk") reached Telegram bare.
+    # The API rejects the ENTIRE message ("Character '-' is reserved and must
+    # be escaped"), and delivery falls back to unformatted plain text.
+    result = Telegrama::Formatter.format("[GPS-risk](https://example.com/admin)")
+    assert_includes result, "[GPS\\-risk]"
+  end
+
+  def test_link_text_escapes_every_reserved_character
+    # [ and ] are structural (they delimit link text); every OTHER reserved
+    # character must come out escaped, so one exotic label can never get the
+    # whole message rejected by Telegram.
+    (Telegrama::Formatter::MARKDOWN_SPECIAL_CHARS - [ "[", "]" ]).each do |char|
+      result = Telegrama::Formatter.format("[before#{char}after](https://example.com)")
+      assert_includes result, "[before\\#{char}after]",
+        "expected #{char.inspect} to be escaped inside link text"
+    end
+  end
+
   def test_multiple_links
     text = "[link1](https://a.com) and [link2](https://b.com)"
     result = Telegrama::Formatter.format(text)
