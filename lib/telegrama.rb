@@ -11,6 +11,7 @@ require_relative "telegrama/error"
 require_relative "telegrama/version"
 require_relative "telegrama/configuration"
 require_relative "telegrama/formatter"
+require_relative "telegrama/inline_keyboard"
 require_relative "telegrama/client"
 require_relative "telegrama/send_message_job"
 

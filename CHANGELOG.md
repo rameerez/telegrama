@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-17
+
+- Added `Telegrama::InlineKeyboard`, a builder for the buttons that hang under
+  a message: `Telegrama::InlineKeyboard.url("Open" => admin_url)` for the
+  common single-button case, or `.row(url: {...}).row(callback: {...})` chained
+  for several rows. Pass it straight to the existing `reply_markup:` option.
+- Validates at the call site what Telegram would otherwise reject wholesale —
+  a malformed keyboard fails the ENTIRE sendMessage rather than degrading to a
+  message without buttons: `callback_data` over its 1-64 BYTE limit (bytes, not
+  characters, so one emoji costs four), relative URLs (the Rails `_path` vs
+  `_url` trap), blank labels, blank URLs, empty rows and empty keyboards.
+- Documented `reply_markup:` and `reply_to_message_id:` in the README. Both
+  were already forwarded to the Telegram API but had never been documented or
+  covered by tests; hand-built `reply_markup` hashes keep working unchanged.
+- Note on scope: `callback:` buttons build correctly, but RECEIVING a tap needs
+  a webhook or long polling handling `callback_query` updates, which this gem
+  deliberately does not do. It stays a send-only library.
+
 ## [0.3.1] - 2026-07-22
 
 - Fixed MarkdownV2 escaping for `-` inside link text: the link-text escape

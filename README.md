@@ -212,6 +212,20 @@ Both `message_prefix` and `message_suffix` are optional and can be used independ
   Telegrama.send_message("Contact: john.doe@example.com", formatting: { obfuscate_emails: true })
   ```
 
+- **`reply_markup`**
+  *Buttons under the message. See [Inline keyboards](#inline-keyboards) below.*
+  **Usage Example:**
+  ```ruby
+  Telegrama.send_message("Retirada retenida", reply_markup: Telegrama::InlineKeyboard.url("Open" => admin_url))
+  ```
+
+- **`reply_to_message_id`**
+  *Make this message a reply to an earlier one in the same chat.*
+  **Usage Example:**
+  ```ruby
+  Telegrama.send_message("Resolved ✅", reply_to_message_id: alert_message_id)
+  ```
+
 - **`client_options`**
   *A hash that overrides the default HTTP client options for this specific request.*
   - `timeout` (Integer): Request timeout in seconds.
@@ -222,6 +236,62 @@ Both `message_prefix` and `message_suffix` are optional and can be used independ
   ```ruby
   Telegrama.send_message("URGENT: Server alert!", client_options: { timeout: 5, retry_count: 5 })
   ```
+
+### Inline keyboards
+
+Hang buttons under a message, so the person reading the alert at 2am can act on it with one tap instead of hunting for the right admin page:
+
+```ruby
+Telegrama.send_message(
+  "Withdrawal held — needs a human",
+  reply_markup: Telegrama::InlineKeyboard.url("Open the withdrawal" => admin_withdrawal_url)
+)
+```
+
+Several rows — each `row` is one line of buttons on the phone:
+
+```ruby
+keyboard = Telegrama::InlineKeyboard.new
+  .row(url: { "Open the withdrawal" => withdrawal_url })
+  .row(url: { "Payout queue" => queue_url, "User profile" => user_url })
+
+Telegrama.send_message("Withdrawal held — needs a human", reply_markup: keyboard)
+```
+
+There are two kinds of button, and the difference matters:
+
+| | What it does | What you need |
+|---|---|---|
+| `url:` | Opens a link | Nothing — works with a send-only bot, which is what this gem is |
+| `callback:` | Pings your bot with the data you set | A webhook (or long polling) handling `callback_query` updates, which this gem does **not** provide |
+
+`callback:` builds a correct button either way, but without a receiver the tap just spins:
+
+```ruby
+Telegrama::InlineKeyboard.callback("👀 I'm on it" => "claim:#{alert.id}")
+```
+
+`callback_data` is limited by Telegram to **1–64 bytes** — bytes, not characters, so a single emoji costs four. It also travels back from the client, so treat it as untrusted: store the real payload server-side and put an opaque key in the button.
+
+Build conditionally? Guard with `empty?`:
+
+```ruby
+Telegrama.send_message(text, reply_markup: (keyboard unless keyboard.empty?))
+```
+
+**Why a builder, when `reply_markup:` already accepts a plain Hash** (and still does — hand-built markup keeps working): a malformed keyboard does not degrade into a message without buttons. Telegram rejects the *entire* `sendMessage`, so the alert nobody could act on is also the alert nobody received. The builder turns those silent, total failures into an `ArgumentError` at the call site, naming the value that is wrong:
+
+```ruby
+Telegrama::InlineKeyboard.callback("Ok" => "🚨" * 33)
+# => ArgumentError: callback_data for button "Ok" is 132 bytes, over Telegram's 64-byte limit.
+#    (Emoji cost 4 bytes each — store the payload server-side and put an opaque key here.)
+
+Telegrama::InlineKeyboard.url("Open" => admin_withdrawal_path(w))
+# => ArgumentError: url button "Open" needs an absolute http(s):// or tg:// URL,
+#    got "/admin/withdrawals/42". (A Rails `_path` helper is a relative path — use `_url`.)
+```
+
+Blank labels, blank URLs, empty rows and empty keyboards are refused the same way.
 
 ### Asynchronous message delivery
 
