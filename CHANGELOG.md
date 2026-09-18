@@ -1,6 +1,6 @@
 ## [Unreleased]
 
-## [0.4.0] - 2026-09-17
+## [0.4.0] - 2026-09-18
 
 - Added `Telegrama::InlineKeyboard`, a builder for the buttons that hang under
   a message: `Telegrama::InlineKeyboard.url("Open" => admin_url)` for the
